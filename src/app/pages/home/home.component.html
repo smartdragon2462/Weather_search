@@ -1,0 +1,289 @@
+<link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+
+
+
+<div class="home-page">
+    <div class="content mt-4 ml-4 mr-4">
+        <form class="form " [formGroup]="angForm" novalidate>
+            <h3 class="mb-3">Weather Search</h3>
+            <div class="form-group row">
+                <label for="inputStreet" class="col-sm-2 col-form-label text-white">Street <span class="danger_Font_darkRed">*</span></label>
+                <div class="col-sm-10">
+                        <!-- [readonly]="!checkValue" -->
+                  <input id="street" name="street" type="text" formControlName="street" class="form-control" id="inputStreet" placeholder="Enter the Street name" >
+                    <div *ngIf="angForm.controls['street'].invalid && (angForm.controls['street'].dirty || angForm.controls['street'].touched)">
+                        <div *ngIf="angForm.controls['street'].errors.required" class="danger_Font_darkRed">
+                            Please enter a street
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="form-group row">
+                <label for="inputCity" class="col-sm-2 col-form-label text-white">City <span class="danger_Font_darkRed">*</span></label>
+                <div class="col-sm-10">
+                    {{checkValue }}
+                  <input list="cities" type="text" class="form-control" id="inputCity" formControlName="city" placeholder="Enter City Name" (keyup)="searchCity($event)" autocomplete="off">
+                    <datalist id="cities">
+                        <option *ngFor="let city of cityList" value="{{city.structured_formatting.main_text}}">
+                    </datalist>
+                    <div *ngIf="angForm.controls['city'].invalid && (angForm.controls['city'].dirty || angForm.controls['city'].touched)">
+                        <div *ngIf="angForm.controls['city'].errors.required" class="danger_Font_darkRed">
+                            Please enter a city
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="form-group row">
+                <label for="inputState" class="col-sm-2 col-form-label text-white">State</label>
+                <div class="col-sm-6">
+                    <select class="custom-select" id="inputState" formControlName="state" >
+                        <option value="" disabled selected>Select State</option>
+                        <option *ngFor="let state of stateList" value="{{state.name}}">{{state.name}}</option>
+                    </select>
+                </div>
+            </div>
+            <div class="form-check">
+                <input class="form-check-input"  type="checkbox" value="" id="currentLocation" formControlName="currentLocation" (click)="changeCurrentLocationStatus()">
+                <label class="form-check-label text-white" for="currentLocation">
+                  Current Location
+                </label>
+            </div>
+            <div class="mt-3">
+                <button type="button" class="btn btn-outline-dark mr-1" style="background: lightgray" (click)="searchWeather()" [disabled]="angForm.invalid && !angForm.get('currentLocation').value">
+                    <a class="material-icons">search</a>
+                    Search 
+                </button>
+                <button type="button" class="btn btn-outline-dark ml-1" style="background: lightgray" (click)="onClear()">
+                    <a class="material-icons">clear_all</a>
+                    Clear</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div class=" mt-4 " style="text-align:center" >
+    <button type="button" class="btn btn-outline-dark mr-1" style="background: #648ca3" (click)="onResult()">Results</button>
+    <button type="button" class="btn btn-outline-dark ml-1" style="background: lightgray" (click)="onFavorite()">Favorites</button>
+</div>
+
+<div *ngIf = "isInvalid">
+    <!-------------------------------- invalid alert --------------------------------------------->
+    <div class="alert alert-warning alert-dismissible fade show" role="alert">
+        Invalid Adress
+    </div>
+</div>
+
+<div *ngIf = "isSearch && resultBtn_flag"  style="position: relative;"> 
+    <div class="mt-3" >
+        <p><ngb-progressbar type="success" [value]="progressValue" *ngIf="isProgressBar"></ngb-progressbar></p>
+    </div>   
+    <!-- (tabChange)="tabChangeEvent($event)" -->
+    <ngb-tabset  class="result_tab col-sm-10 " (tabChange)="tabChangeEvent($event)">
+        <ngb-tab title="Current" id="tab1" >
+            <ng-template ngbTabContent>
+                <div class="current_tab">
+                    <!-------------------------------- Current card --------------------------------------------->
+                    <div class="card col-sm-6 mr-3 ml-3 mt-4 mb-3" style="background: #9ddaffde">
+                        <div class="card-body" style="padding: 0em">
+                            <h5 class="card-title" id="current_title">{{city}}</h5>
+                            <div class = "current_span2">
+                                <div class="current_info_left col-sm-5" >
+                                    <h6 class="card-subtitle mb-3 text-muted" id="current_subtitle">{{weather_info.timezone}}</h6>
+                                    <h4 class="card-text mb-3" id="current_temperature">{{weather_info.currently ? weather_info.currently.temperature + " °F" : ""}}</h4>
+                                    <h6 class="card-text mb-3" id="current_summary">{{weather_info.currently ? weather_info.currently.summary : ""}}</h6>
+                                </div>
+                                <!-- width="150" height="150" -->
+                                <div class="current_info_right col-sm-7" style="padding: 0px">
+                                    <img class="" id="state_seal_img" style="padding: 0px; width: 100%; height: auto;max-width: 175px;" [src]="state_seal_URL?state_seal_URL: ''"/>  
+                                </div>
+                            </div>
+                        
+                            <div class="feature_items row mt-1">
+                                <div class="current_humidity_item">
+                                    <img class=""  data-toggle="tooltip" data-placement="top" title="Humidity" src="https://cdn2.iconfinder.com/data/icons/weather-74/24/weather-16-512.png" width="30" height="30"/>
+                                    <div class="item_value" id="humidity_value" >{{weather_info.currently ? weather_info.currently.humidity : ""}}</div>
+                                </div>
+                                <div class="current_pressure_item">
+                                    <img class=""  data-toggle="tooltip" data-placement="top" title="Pressure" src="https://cdn2.iconfinder.com/data/icons/weather-74/24/weather-25-512.png" width="30" height="30"/>
+                                    <div class="item_value" id="pressure_value">{{weather_info.currently ? weather_info.currently.pressure : ""}}   </div>
+                                </div>
+                                <div class="current_windSpeed_item">
+                                    <img class=""  data-toggle="tooltip" data-placement="top" title="Wind Speed" src="https://cdn2.iconfinder.com/data/icons/weather-74/24/weather-27-512.png" width="30" height="30"/>
+                                    <div class="item_value" id="windSpeed_value">{{weather_info.currently ? weather_info.currently.windSpeed : ""}} </div>
+                                </div>
+                                <div class="current_visibility_item">
+                                    <img class=""  data-toggle="tooltip" data-placement="top" title="Visibility" src="https://cdn2.iconfinder.com/data/icons/weather-74/24/weather-30-512.png" width="30" height="30"/>
+                                    <div class="item_value" id="visibility_value">{{weather_info.currently ? weather_info.currently.visibility : ""}} </div>
+                                </div>
+                                <div class="current_cloudCover_item">
+                                    <img class=""  data-toggle="tooltip" data-placement="top" title="Cloud Cover" src="https://cdn2.iconfinder.com/data/icons/weather-74/24/weather-28-512.png" width="30" height="30"/>
+                                    <div class="item_value" id="cloudCover_value">{{weather_info.currently ? weather_info.currently.cloudCover : ""}}  </div>
+                                </div>   
+                                <div class="current_ozone_item">
+                                    <img class=""  data-toggle="tooltip" data-placement="top" title="Ozone" src="https://cdn2.iconfinder.com/data/icons/weather-74/24/weather-24-512.png" width="30" height="30"/>
+                                    <div class="item_value" id="ozone_value" >{{weather_info.currently ? weather_info.currently.ozone : ""}} </div>
+                                </div> 
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </ng-template>
+        </ngb-tab>
+    
+        <ngb-tab id="tab2" >
+            <ng-template ngbTabTitle>Hourly</ng-template>
+            <ng-template ngbTabContent>
+                <!--   -->
+                <div class="hourly_type_select col-sm-4 mt-2">
+                    <select class="form-control" id="input_hourly_feature" (change)='onOptionsHourly($event)'>
+                        <option value="Temperature">Temperature</option>
+                        <option value="Pressure" >Pressure</option>
+                        <option value="Humidity" >Humidity</option>
+                        <option value="Ozone" >Ozone</option>
+                        <option value="Visibility" >Visibility</option>
+                        <option value="Wind speed" >Wind speed</option>    
+                    </select>
+                </div>
+                <div  class="mt-2" style="display: flex; justify-content: center;">
+                    <div class="hourly_chart_graph col-sm-8" >
+                        <canvas
+                            baseChart
+                            [chartType]="'bar'"
+                            [datasets]="chartData"
+                            [labels]="chartLabels"
+                            [options]="chartOptions"
+                            [legend]="true"
+                            [colors]="colors"
+                            (chartClick)="onChartClick($event)"
+                            >
+                        </canvas>
+                    </div>
+                </div>
+            </ng-template>
+        </ngb-tab>
+        <ngb-tab title="Weekly" id="tab3" >
+            <ng-template ngbTabContent>        
+            <div class="mt-2" style="display: flex; justify-content: center;" >
+                <div class="hourly_chart_graph col-sm-10" id="chartContainer" style="width: 95%; height: 300px;">
+                </div> 
+            </div>
+            </ng-template>
+        </ngb-tab>
+       
+        <!-- <button type="button" id="tab4" >sfsdfsdf
+
+        </button> -->
+        <!-- <ngb-tab class="far fa-star" (click)="addFavorite()" *ngIf="isFavorite" id="tab4" >
+            <i class="far fa-star" (click)="addFavorite()" *ngIf="isFavorite"></i>
+            <i class="fas fa-star" (click)="addFavorite()" *ngIf="!isFavorite"></i>
+        </ngb-tab> -->
+    </ngb-tabset>
+    <i class="far fa-star" style=" position: absolute;   right: 30px;   top: 40px;" (click)="addFavorite()" *ngIf="!isFavorite"></i>
+    <i class="fas fa-star" style=" position: absolute;   right: 30px;   top: 40px; color:#cdce1d" (click)="removeFavorite()" *ngIf="isFavorite"></i>
+
+    <div style="position: absolute; right: 60px; top: 30px;" >
+        <a href="https://twitter.com/intent/tweet?text=The current temperature at {{city}} is {{weather_info.currently.temperature}} °F. The weather conditions are {{weather_info.currently.summary}}. Website:URL CSCI571WeatherSearch" >
+            <img class="twitter-share-button" src="http://csci571.com/hw/hw8/Images/Twitter.png" width=30px height=30px>
+        </a>        
+    </div>
+</div>
+
+
+
+
+<!-- <div>
+    <div class="chart-container" id="tab_chart_container1" #chartContainer></div>
+</div> -->
+<!-- <div id="chartContainer" style="width: 100%; height: 400px;"></div> -->
+
+<!-- Modal -->
+<ng-template #modalContent let-modal class="ml-2;mr-2">
+    <div class="modal-header" style="background: #6598b2; padding: 0px 10px 10px 10px;">
+      <h4 class="modal-title" id="modal-basic-title">{{selected_date }}</h4>
+      <button type="button" class="close" style="padding: 0rem 0rem; margin: 0rem 0rem 0rem;" aria-label="Close" (click)="modal.dismiss('Cross click')">
+        <span aria-hidden="true">&times;</span>
+      </button>
+    </div>
+    <div class="modal-body" style="background: #70c2e0;padding: 10px 0px 0px 0px">
+      <form>
+        <div class="form-group col-" style="display: flex; justify-content:center">
+          <div class = "detail_card_span2 col-sm-6">
+            <h6> {{city? city: ""}} </h6>
+            <h4> {{weather_info.daily? weather_info.daily.data[selectedDate_index].temperatureLow + " °F":""}} </h4>
+            <h6> {{weather_info.daily ? weather_info.daily.data[selectedDate_index].summary : ""}}</h6>
+          </div>
+          <div class = "detail_card_span2 col-sm-6">
+            <div class="current_info_right" style="padding: 0px">
+                <img class="" id="detail_img" style="padding: 0px; width: 100%; height: auto;max-width: 80px;" [src]="weatherIcon_URL?weatherIcon_URL: ''"/>  
+            </div>
+          </div>
+        </div>
+      </form>
+    </div>
+    <div class="modal-footer" style="display: flex; background: #70c2e0;">
+        <div class = "" style="display: initial;  text-align: right;"> 
+            <div class=" " style="display: initial;  text-align: left;">
+                <h6> Precipitation : {{weather_info.daily ? weather_info.daily.data[selectedDate_index].precipIntensity : ""}}</h6>
+                <h6> Chance of Rain : {{weather_info.daily ? weather_info.daily.data[selectedDate_index].precipProbability : ""}} %</h6>
+                <h6> Wind Speed : {{weather_info.daily ? weather_info.daily.data[selectedDate_index].windSpeed : ""}} mph</h6>
+                <h6> Humidity : {{weather_info.daily ? weather_info.daily.data[selectedDate_index].humidity : ""}} %</h6>
+                <h6> Visibility : {{weather_info.daily ? weather_info.daily.data[selectedDate_index].Visibility : ""}} miles</h6>
+            </div>
+        </div>
+       
+    </div>
+</ng-template>
+
+
+<!---------------------------  Card favorite  --------------------------------------->
+
+<div *ngIf="!resultBtn_flag && favoriteList.length==0">
+    <div class="alert alert-warning alert-dismissible fade show" role="alert">
+        No Records
+    </div>
+</div>
+
+<div class="Card_favorite" *ngIf="!resultBtn_flag && favoriteList.length!=0">
+    <div class="mt-3" style="display: flex;justify-content: center">
+        <div class="card col-sm-8 ml-2 mr-2"  style="padding: 0px">
+            <div class="card-header" style="display: flex;    background: #648ca3; font-weight: 700;padding: 10px 0px 10px 0px; text-align: center">
+                <div class="col-sm-2" style="display: flex;padding:0px; text-align: center;justify-content: center; ; width: 50% ">
+                    #
+                </div>
+                <div class="col-sm-3" style="display: flex;padding:0px; text-align: center;justify-content: center;  width: 70%">
+                    Image
+                </div>
+                <div class="col-sm-3" style="display: flex;padding:0px; text-align: center;justify-content: center; ">
+                    City
+                </div>
+                <div class="col-sm-2" style="display: flex;padding:0px; text-align: center;justify-content: center;width: 50%  ">
+                    State
+                </div>
+                <div class="col-sm-2" style="display: flex;padding:0px 5px; text-align: center;justify-content: center; width: 50%  ">
+                    Favorites
+                </div>
+            </div>
+            <div *ngFor="let favourite of favoriteList ; let ii = index">
+                <div class="card-header" style="display: flex;    background: #95cae8; padding: 10px 0px 10px 0px; text-align: center">
+                    <div class="col-sm-2" style="display: flex;padding:0px; text-align: center;justify-content: center; width: 50%">
+                        {{favourite.id}}
+                    </div>
+                    <div class="col-sm-3" style="display: flex;padding:0px; text-align: center;justify-content: center; width: 70%">
+                        <img class="stateSeal" [src]="favourite.imgURL" style="padding: 0px; width: 100%; height: auto;max-width: 50px;max-height: 50px;" >
+                    </div>
+                    <div class="col-sm-3" [id]="ii" style="display: flex;padding:0px; text-align: center;justify-content: center;color: blue; " (click)="setFavoriteData($event)">
+                        {{favourite.city}}
+                    </div>
+                    <div class="col-sm-2" style="display: flex;padding:0px; text-align: center;justify-content: center; width: 50% ">
+                        {{favourite.state}}
+                    </div>
+                    <div class="col-sm-2"  style="display: flex;padding:0px 5px; text-align: center;justify-content: center; width: 50% ">
+                        <div [id]="ii" (click)="removeFavoriteData($event)" style="display: flex; text-align: center;justify-content: center; width:30px; height:25px; background:white;  align-items: center; border-radius: 3px;">
+                            <i class="fas fa-trash" style="color:#dccc27;"></i>
+                        </div>                        
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
