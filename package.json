@@ -23,7 +23,7 @@
     "@ng-bootstrap/ng-bootstrap": "^5.1.2",
     "anychart": "^8.7.0",
     "bootstrap": "^4.3.1",
-    "chart.js": "^2.9.1",
+    "chart.js": "^2.9.4",
     "ng2-charts": "^2.3.0",
     "rxjs": "~6.4.0",
     "tslib": "^1.10.0",
